@@ -4,13 +4,13 @@ import kotlin.math.abs
 fun main() {
     val lines: List<String> = File("input.txt").readLines()
 
-    println(part1(lines))
-    println(part2(lines))
+    val lists = lines.map {it.split(" ").map{ it.toInt()} }
+
+    println(part1(lists))
+    println(part2(lists))
 }
 
-fun part1(lines : List<String>) : Int {
-
-    val lists = lines.map {it.split(" ").map{ it.toInt()} }
+fun part1(lists : List<List<Int>>) : Int {
 
     val res = lists.map {
         val dir = if (it[0] > it[1]) 1 else -1
@@ -27,34 +27,23 @@ fun part1(lines : List<String>) : Int {
 
 } 
 
-fun part2(lines : List<String>) : Int {
-  
-  val lists = lines.map {it.split(" ").map{ it.toInt()} }
+// This is very bad...
+fun part2(lists : List<List<Int>>) : Int {
 
-    val res = lists.map {
-        var dir = if (it[0] > it[1]) 1 else -1
-        var x = it[0]
-        var removed = false
-        for (i in 0 until it.size-1) {
-            val diff = dir * (x - it[i+1])
-            x = it[i+1]
-            if (diff > 3 || diff < 1){
-                if (removed)
-                    return@map 0
-                else {
-                    if (i == 0) {
-                        dir = if (it[1] > it[2]) 1 else -1
-                        x = it[1]
-                        removed = true
-                    } else {
-                        x = it[i]
-                        removed = true
-                    }
-                }
-            }
+    val res = lists.sumOf {
+        var sum = 0
+        for (i in it.indices) {
+            var ok = false
+            val listWithout = it.filterIndexed {idx, x -> idx != i}
+            val isOk = part1(listOf(listWithout)) == 1
+            //println("$listWithout $isOk")
+            ok = ok || isOk
+
+            if (ok) return@sumOf 1
+            0
         }
-        1
-    }.sum()
+        sum
+    }
     
     return res
 
