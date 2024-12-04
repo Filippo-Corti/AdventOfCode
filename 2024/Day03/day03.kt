@@ -17,18 +17,12 @@ fun part1(text : String) : Int {
 } 
 
 fun part2(text : String) : Int {
-    
-    //Before and After
-    val before = text.substring(0, text.indexOf("don't()"))
-    val lastDo = Regex("don't\\(\\).*?do\\(\\)").findAll(text).last().range.last
-    val after = text.substring(lastDo)
-
-    //Middle 
+    val explicitText = "do()" + text + "don't()"
     val regex = Regex("do\\(\\).*?don't\\(\\)")
-    val matches = regex.findAll(text)
-    val middle = matches.map { it.groupValues[0]}.joinToString("X")
+    val matches = regex.findAll(explicitText)
+    val newText = matches.map { it.groupValues[0]}.joinToString("X")
 
-    return part1(before + "X" + middle + "X" + after)
+    return part1(newText)
 }
 // kotlinc day03.kt -include-runtime -d day03.jar
 // java -jar day03.jar
