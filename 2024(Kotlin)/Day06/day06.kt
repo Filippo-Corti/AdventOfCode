@@ -1,13 +1,6 @@
 import java.io.File
 import kotlin.math.abs 
 
-val dirs = listOf(
-    0 to 1,
-    0 to -1,
-    1 to 0,
-    -1 to 0
-)
-
 fun turnRight(dir : Pair<Int, Int>) : Pair<Int, Int> {
     return when (dir) {
         0 to 1 -> 1 to 0
@@ -37,11 +30,8 @@ fun main() {
     val rows = lines.size
     val cols = lines[0].length
 
-
-
-    //println(part1(obstructions, guard, rows, cols))
-    //println(isLooping(obstructions, Pair(guard, -1 to 0), rows, cols))
-    println(part2(obstructions, guard, rows, cols)) //1767
+    println(part1(obstructions, guard, rows, cols))
+    println(part2(obstructions, guard, rows, cols))
 }
 
 
@@ -71,36 +61,32 @@ fun part1(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Int, Int>, rows :
 } 
 
 fun part2(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Int, Int>, rows : Int, cols : Int) : Int  {
-    
+
+    val occupied : HashSet<Pair<Int, Int>> = HashSet()  
     val positionsToFind : HashSet<Pair<Int, Int>> = HashSet()
     var dir = -1 to 0
     var curr = guard
 
-    var i = 0
     while (true) {
 
         val next = Pair(curr.first + dir.first, curr.second + dir.second)
 
         if (next.first < 0 || next.first >= rows || next.second < 0 || next.second >= cols) {
-            //println(positionsToFind)
             return positionsToFind.size
         }
-
-        //println("$i")
-        i++
 
         if (obstructions.contains(next)) {
             dir = turnRight(dir)
         } else {
-
             val newObstructions = HashSet(obstructions)
             newObstructions.add(next)
-            if (isLooping(newObstructions, Pair(guard, -1 to 0), rows, cols))
+            if (!occupied.contains(next) && isLooping(newObstructions, Pair(curr, dir), rows, cols))
                 positionsToFind.add(next)
 
             curr = next
         }
 
+        occupied.add(curr)
     }
 
     return positionsToFind.size
@@ -120,8 +106,6 @@ fun isLooping(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Pair<Int, Int
         occupied.add(Pair(curr, dir))
 
         val next = Pair(curr.first + dir.first, curr.second + dir.second)
-
-        //println("Next is $next $dir")
 
         if (next.first < 0 || next.first >= rows || next.second < 0 || next.second >= cols)
             return false
