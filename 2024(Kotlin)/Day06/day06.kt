@@ -40,6 +40,7 @@ fun main() {
 
 
     //println(part1(obstructions, guard, rows, cols))
+    //println(isLooping(obstructions, Pair(guard, -1 to 0), rows, cols))
     println(part2(obstructions, guard, rows, cols)) //1767
 }
 
@@ -71,13 +72,13 @@ fun part1(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Int, Int>, rows :
 
 fun part2(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Int, Int>, rows : Int, cols : Int) : Int  {
     
-    val occupied : HashSet<Pair<Pair<Int, Int>, Pair<Int, Int>>> = HashSet()
     val positionsToFind : HashSet<Pair<Int, Int>> = HashSet()
     var dir = -1 to 0
     var curr = guard
 
     var i = 0
     while (true) {
+
         val next = Pair(curr.first + dir.first, curr.second + dir.second)
 
         if (next.first < 0 || next.first >= rows || next.second < 0 || next.second >= cols) {
@@ -91,9 +92,10 @@ fun part2(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Int, Int>, rows :
         if (obstructions.contains(next)) {
             dir = turnRight(dir)
         } else {
-            val newObstructions = obstructions.toMutableSet()
+
+            val newObstructions = HashSet(obstructions)
             newObstructions.add(next)
-            if (isLooping(newObstructions.toHashSet(), Pair(curr, turnRight(dir)), rows, cols))
+            if (isLooping(newObstructions, Pair(guard, -1 to 0), rows, cols))
                 positionsToFind.add(next)
 
             curr = next
@@ -110,8 +112,13 @@ fun isLooping(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Pair<Int, Int
     var curr = guard.first
     var dir = guard.second
 
-    occupied.add(guard)
     while (true) {
+        
+        if (occupied.contains(Pair(curr, dir))) 
+            return true
+
+        occupied.add(Pair(curr, dir))
+
         val next = Pair(curr.first + dir.first, curr.second + dir.second)
 
         //println("Next is $next $dir")
@@ -122,12 +129,7 @@ fun isLooping(obstructions : HashSet<Pair<Int, Int>>, guard : Pair<Pair<Int, Int
         if (obstructions.contains(next)) {
             dir = turnRight(dir)
         } else {
-            if (occupied.contains(Pair(next, dir))) 
-                return true
-
             curr = next
-
-            occupied.add(Pair(curr, dir))
         }
         
     }
