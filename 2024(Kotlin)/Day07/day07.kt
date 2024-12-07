@@ -1,4 +1,6 @@
 import java.io.File
+import kotlin.math.log10
+import kotlin.math.pow
 
 data class Equation (val res : Long, val operands : List<Long>)
 
@@ -12,7 +14,9 @@ fun prod(l1 : Long, l2 : Long) : Long {
 }
  
 fun concat(l1 : Long, l2 : Long) : Long {
-    return "$l1$l2".toLong()
+    val size = log10(l2.toDouble()).toInt() + 1
+    return l1 * (10.0.pow(size)).toLong() + l2
+    //return "$l1$l2".toLong()
 }
 
 fun main() {
