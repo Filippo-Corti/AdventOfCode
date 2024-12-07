@@ -37,8 +37,6 @@ fun part2(lines : List<Equation>) : Long  {
 }
 
 fun solveWithOp1(eq : Equation, op : (Long, Long) -> Long) : Boolean {
-    if (eq.res < 0 || eq.operands.size < 2) return false
-
     val calc = op(eq.operands[0], eq.operands[1])
     if (eq.operands.size == 2) return eq.res == calc
     
@@ -48,6 +46,8 @@ fun solveWithOp1(eq : Equation, op : (Long, Long) -> Long) : Boolean {
 }
 
 fun isSolveable1(eq : Equation) : Boolean {
+    if (eq.res < 0 || eq.operands.size < 2) return false
+
     val operators = listOf(::sum, ::prod)
     if (eq.res < 0) return false
 
@@ -60,8 +60,6 @@ fun isSolveable1(eq : Equation) : Boolean {
 }
 
 fun solveWithOp2(eq : Equation, op : (Long, Long) -> Long) : Boolean {
-    if (eq.res < 0 || eq.operands.size < 2) return false
-
     val calc = op(eq.operands[0], eq.operands[1])
     if (eq.operands.size == 2) return eq.res == calc
     
@@ -71,6 +69,8 @@ fun solveWithOp2(eq : Equation, op : (Long, Long) -> Long) : Boolean {
 }
 
 fun isSolveable2(eq : Equation) : Boolean {
+    if (eq.res < 0 || eq.operands.size < 2) return false
+
     val operators = listOf(::sum, ::prod, ::concat)
     if (eq.res < 0) return false
 
