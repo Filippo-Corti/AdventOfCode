@@ -82,7 +82,7 @@ fun part2(disk : List<Int>) : Long {
         if (pickingFromLeft) {
             if (space == 0) currPos += disk[i].toLong()
             while(space > 0) {
-                println("$space: Counting non moved file with ID=$leftId * $currPos")
+                //println("$space: Counting non moved file with ID=$leftId * $currPos")
                 sum += leftId.toLong() * currPos
                 currPos++
                 space--
@@ -91,24 +91,25 @@ fun part2(disk : List<Int>) : Long {
             leftId++
         } else {
             loop@ while(space > 0) {
-                println("$space: Finding a file that fits")
+                //println("$space: Finding a file that fits")
                 //Find a file that fits
                 while(!(diskCpy[rightIndex] <= space && diskCpy[rightIndex] != 0)) { 
-                    println("Id $rightId is not ok ${diskCpy[rightIndex]}")
+                    //println("Id $rightId is not ok ${diskCpy[rightIndex]}")
                     rightIndex-=2
                     if (rightIndex < 0) {
                         rightIndex = diskCpy.size - 1
+                        rightId = disk.size / 2
                         currPos += space.toLong()
                         break@loop
                     }
                     rightId--
                 }
 
-                println("Found file with id $rightId")
+                //println("Found file with id $rightId")
 
                 //Position file
                 while (diskCpy[rightIndex] > 0) {
-                    println("$space: Counting moved file with ID=$rightId * $currPos")
+                    //println("$space: Counting moved file with ID=$rightId * $currPos")
                     sum += rightId.toLong() * currPos
                     currPos++
                     diskCpy[rightIndex]--
