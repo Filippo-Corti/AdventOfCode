@@ -7,17 +7,6 @@ val dirs = listOf(
     -1 to 0
 )
 
-val dirs2 = listOf(
-    0 to 1,
-    0 to -1,
-    1 to 0,
-    -1 to 0,
-    -1 to -1,
-    1 to 1,
-    1 to -1,
-    -1 to 1
-)
-
 var rows : Int = 0
 var cols : Int = 0
 
@@ -36,11 +25,10 @@ fun main() {
     cols = lines[0].length
 
 
-    //println(part1(map))
-    println(part2(map))
+    println(part1(map))
 }
 
-var visited : HashSet<Pair<Int, Int>> = HashSet()
+val visited : HashSet<Pair<Int, Int>> = HashSet()
 
 fun part1(map : MutableMap<Pair<Int, Int>, Char>) : Int {
     var score = 0
