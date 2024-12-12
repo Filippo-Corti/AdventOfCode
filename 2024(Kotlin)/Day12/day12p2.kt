@@ -143,6 +143,7 @@ fun floodFill2(map : MutableMap<Pair<Int, Int>, Char>, curr : Pair<Int, Int>, fi
 
 fun countSides(perimeter : HashSet<Pair<Int, Int>>) : Int {
     println("Counting for $perimeter")
+    val notUsed : HashSet<Pair<Int, Int>> = HashSet(perimeter)
     val start = perimeter.toList()[0]
     var currPos = start
 
@@ -162,6 +163,7 @@ fun countSides(perimeter : HashSet<Pair<Int, Int>>) : Int {
     var sides = 0
 
     do {
+        notUsed.remove(currPos)
         var check = Pair(currPos.first + currDir.first, currPos.second + currDir.second)
         if (perimeter.contains(check)) {
             prevPos = currPos
@@ -185,7 +187,11 @@ fun countSides(perimeter : HashSet<Pair<Int, Int>>) : Int {
     var next = Pair(currPos.first + currDir.first, currPos.second + currDir.second)
     if (!perimeter.contains(next))
         sides++
+ 
+    println("Found $sides sides, but didn't use ${notUsed.size}")
+    if (notUsed.size != 0) {
+        sides += countSides(notUsed)
+    }
 
-    println("Found $sides sides")
     return sides
 }
