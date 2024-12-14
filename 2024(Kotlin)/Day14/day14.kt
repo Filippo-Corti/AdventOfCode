@@ -2,7 +2,7 @@ import java.io.File
 import kotlin.math.round
 import kotlin.math.abs 
 
-data class Robot(val pos : Pair<Int, Int>, val vel : Pair<Int, Int>)
+data class Robot(var pos : Pair<Int, Int>, val vel : Pair<Int, Int>)
 
 val rows : Int = 103
 val cols : Int = 101
@@ -24,43 +24,65 @@ fun main() {
         Robot(matches[1] to matches[0], matches[3] to matches[2])
     }
 
-    println(robots)
+    //println(robots)
 
     println(part1(robots))
+    println(part2(robots))
 }
 
 fun part1(robots : List<Robot>) : Int {
     val quadrants : MutableList<Int> = mutableListOf(0, 0, 0, 0, 0)
-    robots.forEach {
-        val p = teleport(it, 100)
-        println("Final position is $p, quadrant is ${quadrant(p)}")
-        quadrants[quadrant(p)]++
+
+    for (i in 1..100) {
+        robots.forEach {
+            it.pos = teleport(it)
+        }
     }
-    println(quadrants)
+
+    robots.forEach {
+        quadrants[quadrant(it.pos)]++
+    }
+
     return quadrants[1] * quadrants[2] * quadrants[3] * quadrants[4]
 }
 
-fun teleport(robot : Robot, seconds : Int) : Pair<Int, Int> {
-    val visited : MutableMap<Pair<Int, Int>, Int> = mutableMapOf()
+fun teleport(robot : Robot) : Pair<Int, Int> {
+    var nextRow = robot.pos.first + robot.vel.first
+    var nextCol = robot.pos.second + robot.vel.second
 
-    var curr = robot.pos
-    val (dr, dc) = robot.vel
+    if (nextRow < 0 || nextRow >= rows) nextRow = (nextRow + rows) % rows
+    if (nextCol < 0 || nextCol >= cols) nextCol = (nextCol + cols) % cols
 
-    visited.put(curr, 0)
+    return nextRow to nextCol
+}
 
-    for (i in 1..seconds) {
-       // println("Currently in $curr")
-        var nextRow = curr.first + dr
-        var nextCol = curr.second + dc
-
-        if (nextRow < 0 || nextRow >= rows) nextRow = (nextRow + rows) % rows
-        if (nextCol < 0 || nextCol >= cols) nextCol = (nextCol + cols) % cols
-
-        curr = nextRow to nextCol
-        visited.put(curr, i+1)
-
+fun part2(robots : List<Robot>) : Int {
+    for (i in 1..10000) {
+        val positions : HashSet<Pair<Int, Int>> = HashSet()
+        robots.forEach {
+            it.pos = teleport(it)
+            positions.add(it.pos)
+        }
+        if (positions.size == 500) {
+            println(positions.size)
+            printPositions(positions)
+            return i + 100 // Moves from Part 1
+        }
     }
 
-    return curr
+    return 0
 
+}
+
+fun printPositions(positions : HashSet<Pair<Int, Int>>) {
+    for (i in 0 until rows) {
+        for (j in 0 until cols) {
+            if (positions.contains(i to j)) {
+                print("#")
+            } else {
+                print(".")
+            }
+        }
+        println()
+    }
 }
