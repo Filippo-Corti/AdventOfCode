@@ -34,7 +34,7 @@ fun main() {
     rows = lines.size
     cols = lines[0].length
 
-    //println(part1(map.toMap()))
+    println(part1(map.toMap()))
     println(part2(map.toMap()))
 }
 
