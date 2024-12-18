@@ -15,8 +15,8 @@ fun main() {
         .split(",")
         .map { it.toInt() }
 
-    part1(computer, instructions)
-    //part2(instructions)
+    //part1(computer, instructions)
+    part2(instructions)
 }
 
 fun evaluateComboOperand(computer : Computer, operand : Int) : Long {
@@ -77,18 +77,15 @@ fun part1(computer : Computer, instructions : List<Int>) {
     }
 } 
 
-fun testExec(c : Computer, expected : List<Int>) : Boolean {
+fun testExec(c : Computer, expected : List<Int>) : Int {
     if (expected.size == 0)
-        return true
+        return 0
     
     val computer = Computer(c.A, c.B, c.C)
     val res = execFastCycle(computer)
     if (expected[0] != res)
-        return false
+        return expected.size
     
-    if (expected.size == 11)
-        println("Passed 5 Levels! ${c.A}")
-
     return testExec(computer, expected.subList(1, expected.size))
 }
 
@@ -118,18 +115,22 @@ fun part2(instructions : List<Int>) : Long {
     val min = 8.0.pow(15.0).toLong()
     val max = 8.0.pow(16.0).toLong()
     
-    val c = Computer(1881L, 117L, 117L)
-
     //while(c.A != 0L) {
         // val p = inverseFastCycle(c)
         // println("Computer is $c - printed $p")
     //}
 
+    var i = 100
+
     for(a in min until max) {
         val c = Computer(a, 0L, 0L)
-        if (testExec(c, instructions)) {
-            return a
+        if (testExec(c, instructions) <= instructions.size - 10) {
+            i--
+            println("More than 5 with A = $a")
         }
+
+        if (i == 0)
+            break
         
         //println("$a/$max")
     }
