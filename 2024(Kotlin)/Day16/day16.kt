@@ -34,32 +34,69 @@ fun main() {
     rows = lines.size
     cols = lines[0].length
 
-    println(part1(map.toMap()))
+    //println(part1(map.toMap()))
+    println(part2(map.toMap()))
 }
 
 
 fun part1(map : Map<Pair<Int, Int>, Char>) : Int {
-    var start = rows-2 to 1 // Starting Position
-    var startDir = 0 to 1 // Starting Direction (Est)
- 
-    val distances = mutableMapOf<Position, Int>().withDefault { Int.MAX_VALUE }
+    val start = Position(rows-2 to 1, 0 to 1)
+    val end = 1 to cols-2
+    return dijkstraFrom(start, map)
+        .first
+        .filter {(k, _) -> k.pos == end}
+        .values
+        .min()
+}
+
+fun part2(map : Map<Pair<Int, Int>, Char>) : Int {
+    val start = Position(rows-2 to 1, 0 to 1)
+    val end = 1 to cols-2
+
+    val (dists, paths) = dijkstraFrom(start, map)
+    val endWithDir = dists
+        .filter {(k, _) -> k.pos == end}
+        .minByOrNull { it.value}
+        ?.key
+
+    val shortestPathsToEnd = paths[endWithDir]!!
+  
+    val sittingTiles = hashSetOf<Pair<Int, Int>>()
+
+    shortestPathsToEnd.forEach {
+        sittingTiles.addAll(it.map {it.pos})
+    }
+
+    return sittingTiles.size
+}
+
+fun dijkstraFrom(start : Position, map : Map<Pair<Int, Int>, Char>) : Pair<Map<Position, Int>, Map<Position, MutableList<HashSet<Position>>>> {
+
     val priorityQueue = PriorityQueue<Pair<Position, Int>>( compareBy { it.second })
-    priorityQueue.add(Position(start, startDir) to 0)
-    distances.put(Position(start, startDir), 0)
+    val distances = mutableMapOf<Position, Int>().withDefault { Int.MAX_VALUE }
+    val paths = mutableMapOf<Position, MutableList<HashSet<Position>>>()
+
+    priorityQueue.add(start to 0)
+    distances.put(start, 0)
+    paths.put(start, mutableListOf(hashSetOf(start)))
 
     while(!priorityQueue.isEmpty()) {
         val (currPos, currDist) = priorityQueue.poll()
-        // println("Popped $currPos, $currDist")
-        if (map[currPos.pos]!! == 'E') return currDist
 
         for (nextPos in neighbours(currPos.pos, map)) {
             val totalDist = currDist + if (currPos.dir == nextPos.dir) 1 else 1001
+
             if (totalDist < distances.getValue(nextPos)) {
                 distances[nextPos] = totalDist
+                paths[nextPos] = paths[currPos]!!.map { (it + nextPos).toHashSet() }.toMutableList() // OVERRIDE: Paths to nextPos are all paths to currPos + nextPos
                 priorityQueue.add(nextPos to totalDist)
+            } else if (totalDist == distances.getValue(nextPos)) {
+                paths[nextPos]!!.addAll(paths[currPos]!!.map { (it + nextPos).toHashSet() }.toMutableList()) // ADD: Paths to nextPos are all previous paths to nextPos and all paths to currPos + nextPos
             }
+
         }
     }
 
-    return 0
+    return distances.toMap() to paths.toMap()
+
 }
