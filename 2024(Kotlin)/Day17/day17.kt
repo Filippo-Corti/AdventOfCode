@@ -15,8 +15,8 @@ fun main() {
         .split(",")
         .map { it.toInt() }
 
-    //part1(computer, instructions)
-    part2(instructions)
+    part1(computer, instructions)
+    //part2(instructions)
 }
 
 fun evaluateComboOperand(computer : Computer, operand : Int) : Long {
@@ -50,7 +50,7 @@ fun execute(computer : Computer, opcode : Int, operand : Int, ip : Int) : Int {
         }
         5 -> { // OUT
             val outVal = evaluateComboOperand(computer, operand) % 8
-            print("\n---\n$outVal - $computer\n---\n")
+            print("\n---\nPRINT $outVal\n---\n")
         }
         6 -> { // BVD
             computer.B = computer.A / 2.0.pow(evaluateComboOperand(computer, operand).toDouble()).toLong()
@@ -73,7 +73,7 @@ fun part1(computer : Computer, instructions : List<Int>) {
 
         ip = execute(computer, opcode, operand, ip)
 
-        println("Result is $computer")
+        println("A is ${java.lang.Long.toBinaryString(computer.A)}")
     }
 } 
 
@@ -109,30 +109,58 @@ fun inverseFastCycle(c : Computer) : Int {
     return (c.B % 8).toInt()
 }
 
+fun smallestAToPrintX(x : Int, prefix : String = "") : Pair<Int, Long> {
+    var currs = ArrayDeque<String>()
+    currs.add("0$prefix")
+    currs.add("1$prefix")
+    while(true) {
+        val curr = currs.removeFirst()
+        val withZero = "0$curr"
+        var c = Computer(withZero.toLong(2),0L, 0L)
+        val withZeroRes = execFastCycle(c)
+        if (withZeroRes == x) 
+            return withZero.toInt(2) to c.A
+        else {
+            currs.add("0$withZero")
+            currs.add("1$withZero")
+        }
+        
+        val withOne = "1$curr"
+        c = Computer(withOne.toLong(2),0L, 0L)
+        val withOneRes = execFastCycle(c)
+        if (withOneRes == x) 
+            return withOne.toInt(2) to c.A
+        else {
+            currs.add("0$withOne")
+            currs.add("1$withOne")
+        }
+    }
+}
+
 // A is between 8^15 and 8^16
 fun part2(instructions : List<Int>) : Long {
 
-    val min = 8.0.pow(15.0).toLong()
-    val max = 8.0.pow(16.0).toLong()
+    // val bin = "001001011111"
+
+    // println(part1(
+    //     Computer(bin.toLong(2), 10L, 40L),
+    //     instructions
+    // ))
+
+    // println(smallestAToPrintX(2)) //111
     
-    //while(c.A != 0L) {
-        // val p = inverseFastCycle(c)
-        // println("Computer is $c - printed $p")
-    //}
+    // println(smallestAToPrintX(4, "")) //001
+    
+    // println(smallestAToPrintX(1, "")) //100
 
-    var i = 100
+    // println(smallestAToPrintX(2, "")) //111
 
-    for(a in min until max) {
-        val c = Computer(a, 0L, 0L)
-        if (testExec(c, instructions) <= instructions.size - 10) {
-            i--
-            println("More than 5 with A = $a")
-        }
-
-        if (i == 0)
+    for (a in 0 until 1000) {
+        if (testExec(Computer(a.toLong(), 0L, 0L), listOf(2, 0)) == 0) {
+            println("$a is ok")
             break
-        
-        //println("$a/$max")
+        }
     }
+
     return 0
 }
