@@ -15,8 +15,8 @@ fun main() {
         .split(",")
         .map { it.toInt() }
 
-    part1(computer, instructions)
-    //part2(instructions)
+    //part1(computer, instructions)
+    part2(instructions)
 }
 
 fun evaluateComboOperand(computer : Computer, operand : Int) : Long {
@@ -73,7 +73,10 @@ fun part1(computer : Computer, instructions : List<Int>) {
 
         ip = execute(computer, opcode, operand, ip)
 
-        println("A is ${java.lang.Long.toBinaryString(computer.A)}")
+        println("Computer is ${computer} or")
+        print("${java.lang.Long.toBinaryString(computer.A)}\t")
+        print("${java.lang.Long.toBinaryString(computer.B)}\t")
+        println("${java.lang.Long.toBinaryString(computer.C)}")
     }
 } 
 
@@ -138,14 +141,47 @@ fun smallestAToPrintX(x : Int, prefix : String = "") : Pair<Int, Long> {
 }
 
 // A is between 8^15 and 8^16
+// The output of a cycle depends exclusively on A, in particolar,
+// on the last 10 binary digits of its value
 fun part2(instructions : List<Int>) : Long {
 
-    // val bin = "001001011111"
+    val maps = mutableMapOf<Int, HashSet<Int>>().withDefault{ hashSetOf<Int>() }
 
-    // println(part1(
-    //     Computer(bin.toLong(2), 10L, 40L),
-    //     instructions
-    // ))
+    for (i in 0 until 1024) {
+        val c = Computer(i.toLong(), 0L, 0L)
+        val r = execFastCycle(c)
+        if (maps.containsKey(r))
+            maps[r]!!.add(i)
+        else 
+            maps[r] = hashSetOf(i)
+    }
+
+    for ((k, v) in maps) {
+        println("There are ${v.size} values that print $k")
+    }
+
+    // val inn = 29
+    // val binIn = java.lang.Long.toBinaryString(inn.toLong())
+
+    // val relevantPart = if (binIn.length >= 10) binIn.substring(binIn.length - 10) else binIn
+    // val relevantPartInt = relevantPart.toInt(2)
+
+    // println("First output for $inn ($binIn) depends on $relevantPart and is ${outputs[relevantPartInt]}")
+
+    //Supponiamo di conoscere tutti i numeri D tra 0 e 1024 che fanno stampare 2
+    //Supponiamo di conoscere tutti i numeri Q tra 0 e 1024 che fanno stampare 4
+    //Supponiamo di conoscere tutti i numeri U tra 0 e 1024 che fanno stampare 1
+    //Tutti i numeri che fanno stampare prima 2 e poi 4 e poi 1 sono?
+    // Quelli della forma AAABBBXXXXYYYZZZ dove
+    // AAABBBXXXX sta nell'insieme U
+    // BBBXXXXYYY sta nell'insieme Q
+    // XXXYYYZZZ sta nell'insieme D
+
+    // val central = ""
+    // val bin = "1111111${central}111"
+
+    // val res = execFastCycle(Computer(bin.toLong(2), 0L, 0L))
+    // println("Risultato: $res for ${bin.toLong(2)}")
 
     // println(smallestAToPrintX(2)) //111
     
@@ -155,12 +191,12 @@ fun part2(instructions : List<Int>) : Long {
 
     // println(smallestAToPrintX(2, "")) //111
 
-    for (a in 0 until 1000) {
-        if (testExec(Computer(a.toLong(), 0L, 0L), listOf(2, 0)) == 0) {
-            println("$a is ok")
-            break
-        }
-    }
+    // for (a in 0 until 1000) {
+    //     if (testExec(Computer(a.toLong(), 0L, 0L), listOf(2, 0)) == 0) {
+    //         println("$a is ok")
+    //         break
+    //     }
+    // }
 
     return 0
 }
