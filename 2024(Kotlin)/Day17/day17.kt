@@ -3,6 +3,10 @@ import kotlin.math.pow
 
 data class Computer(var A : Long, var B : Long, var C : Long)
 
+fun toBin(l : Long) : String {
+    return java.lang.Long.toBinaryString(l)
+}
+
 fun main() {
     val lines = File("input.txt").readLines()
 
@@ -15,9 +19,11 @@ fun main() {
         .split(",")
         .map { it.toInt() }
 
-    //part1(computer, instructions)
-    part2(instructions)
+    println(part1(computer, instructions))
+    println(part2(instructions))
 }
+
+val part1Prints = mutableListOf<String>()
 
 fun evaluateComboOperand(computer : Computer, operand : Int) : Long {
     return when (operand) {
@@ -50,7 +56,7 @@ fun execute(computer : Computer, opcode : Int, operand : Int, ip : Int) : Int {
         }
         5 -> { // OUT
             val outVal = evaluateComboOperand(computer, operand) % 8
-            print("\n---\nPRINT $outVal\n---\n")
+            part1Prints.add("$outVal")
         }
         6 -> { // BVD
             computer.B = computer.A / 2.0.pow(evaluateComboOperand(computer, operand).toDouble()).toLong()
@@ -60,36 +66,6 @@ fun execute(computer : Computer, opcode : Int, operand : Int, ip : Int) : Int {
         }
     }
     return ip + 2
-}
-
-fun part1(computer : Computer, instructions : List<Int>) {
-    var ip = 0
-
-    while (ip < instructions.size) {
-        val opcode = instructions[ip]
-        val operand = instructions[ip+1]
-
-        print("($ip) Executing $opcode, $operand - ")
-
-        ip = execute(computer, opcode, operand, ip)
-
-        println("Computer is ${computer} or")
-        print("${java.lang.Long.toBinaryString(computer.A)}\t")
-        print("${java.lang.Long.toBinaryString(computer.B)}\t")
-        println("${java.lang.Long.toBinaryString(computer.C)}")
-    }
-} 
-
-fun testExec(c : Computer, expected : List<Int>) : Int {
-    if (expected.size == 0)
-        return 0
-    
-    val computer = Computer(c.A, c.B, c.C)
-    val res = execFastCycle(computer)
-    if (expected[0] != res)
-        return expected.size
-    
-    return testExec(computer, expected.subList(1, expected.size))
 }
 
 fun execFastCycle(c : Computer) : Int {
@@ -102,101 +78,51 @@ fun execFastCycle(c : Computer) : Int {
     return (c.B % 8).toInt()
 }
 
-fun inverseFastCycle(c : Computer) : Int {
-    c.B = c.B.xor(7L)
-    c.A = c.A * 8
-    c.B = c.B.xor(c.C)
-    //c.C = ???
-    c.B = (c.B).xor(2L)
-    //c.B = ??? c.A / (8 * k)
-    return (c.B % 8).toInt()
-}
+fun part1(computer : Computer, instructions : List<Int>) : String {
+    var ip = 0
 
-fun smallestAToPrintX(x : Int, prefix : String = "") : Pair<Int, Long> {
-    var currs = ArrayDeque<String>()
-    currs.add("0$prefix")
-    currs.add("1$prefix")
-    while(true) {
-        val curr = currs.removeFirst()
-        val withZero = "0$curr"
-        var c = Computer(withZero.toLong(2),0L, 0L)
-        val withZeroRes = execFastCycle(c)
-        if (withZeroRes == x) 
-            return withZero.toInt(2) to c.A
-        else {
-            currs.add("0$withZero")
-            currs.add("1$withZero")
-        }
-        
-        val withOne = "1$curr"
-        c = Computer(withOne.toLong(2),0L, 0L)
-        val withOneRes = execFastCycle(c)
-        if (withOneRes == x) 
-            return withOne.toInt(2) to c.A
-        else {
-            currs.add("0$withOne")
-            currs.add("1$withOne")
-        }
+    while (ip < instructions.size) {
+        val opcode = instructions[ip]
+        val operand = instructions[ip+1]
+        ip = execute(computer, opcode, operand, ip)
     }
-}
 
-// A is between 8^15 and 8^16
-// The output of a cycle depends exclusively on A, in particolar,
-// on the last 10 binary digits of its value
+    return part1Prints.joinToString(",")
+} 
+
 fun part2(instructions : List<Int>) : Long {
 
-    val maps = mutableMapOf<Int, HashSet<Int>>().withDefault{ hashSetOf<Int>() }
-
+    val maps = mutableMapOf<Int, HashSet<Long>>().withDefault{ hashSetOf<Long>() }
     for (i in 0 until 1024) {
         val c = Computer(i.toLong(), 0L, 0L)
         val r = execFastCycle(c)
         if (maps.containsKey(r))
-            maps[r]!!.add(i)
+            maps[r]!!.add(i.toLong())
         else 
-            maps[r] = hashSetOf(i)
+            maps[r] = hashSetOf(i.toLong())
     }
 
-    for ((k, v) in maps) {
-        println("There are ${v.size} values that print $k")
+    var values = maps[instructions[0]]!!
+    for (i in 1 until instructions.size) {
+        var newValues = hashSetOf<Long>()
+        for (a in values) {
+            val aBin = toBin(a.toLong())
+            val prefixA = toBin((a / (8.0.pow(i)).toLong()).toLong())
+            val suffixA = toBin((a % (8.0.pow(i)).toLong()).toLong())
+
+            for (b in maps[instructions[i]]!!) {
+                val bBin = toBin(b.toLong())
+                val prefixB = toBin((b / 128).toLong())
+                val suffixB = toBin((b % 128).toLong())
+                if (prefixA == suffixB) {
+                    val together = "$bBin${suffixA.padStart(3*i, '0')}"
+                    val togetherDec = together.toLong(2)
+                    newValues.add(togetherDec)
+                }
+            }
+
+        }
+        values = newValues
     }
-
-    // val inn = 29
-    // val binIn = java.lang.Long.toBinaryString(inn.toLong())
-
-    // val relevantPart = if (binIn.length >= 10) binIn.substring(binIn.length - 10) else binIn
-    // val relevantPartInt = relevantPart.toInt(2)
-
-    // println("First output for $inn ($binIn) depends on $relevantPart and is ${outputs[relevantPartInt]}")
-
-    //Supponiamo di conoscere tutti i numeri D tra 0 e 1024 che fanno stampare 2
-    //Supponiamo di conoscere tutti i numeri Q tra 0 e 1024 che fanno stampare 4
-    //Supponiamo di conoscere tutti i numeri U tra 0 e 1024 che fanno stampare 1
-    //Tutti i numeri che fanno stampare prima 2 e poi 4 e poi 1 sono?
-    // Quelli della forma AAABBBXXXXYYYZZZ dove
-    // AAABBBXXXX sta nell'insieme U
-    // BBBXXXXYYY sta nell'insieme Q
-    // XXXYYYZZZ sta nell'insieme D
-
-    // val central = ""
-    // val bin = "1111111${central}111"
-
-    // val res = execFastCycle(Computer(bin.toLong(2), 0L, 0L))
-    // println("Risultato: $res for ${bin.toLong(2)}")
-
-    // println(smallestAToPrintX(2)) //111
-    
-    // println(smallestAToPrintX(4, "")) //001
-    
-    // println(smallestAToPrintX(1, "")) //100
-
-    // println(smallestAToPrintX(2, "")) //111
-
-    // for (a in 0 until 1000) {
-    //     if (testExec(Computer(a.toLong(), 0L, 0L), listOf(2, 0)) == 0) {
-    //         println("$a is ok")
-    //         break
-    //     }
-    // }
-
-    return 0
+    return values.min()
 }
