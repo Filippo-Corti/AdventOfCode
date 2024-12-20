@@ -83,16 +83,56 @@ fun part1(map : MutableMap<Position, Char>, start : Position, end : Position) : 
 
     val (distancesToEnd, walls) = bfs(map, end, start) 
     val totalLength = distancesToEnd[start]!!
-    val cheats = mutableMapOf<Int, HashSet<Pair<Position, Position>>>().withDefault { hashSetOf() }
+    val cheats = mutableMapOf<Int, Int>().withDefault { 0 }
+
+    for (wall in walls) {
+        var pathsNextToWall = neighbours(wall).filter { map[it]!! == '.'}
+        
+        if (pathsNextToWall.size < 1) continue 
+
+        val comingFrom = pathsNextToWall.maxOf { distancesToEnd[it]!! }
+        val goingTo = pathsNextToWall.minOf { distancesToEnd[it]!! }
+        val gain = comingFrom - goingTo - 2
+
+        cheats[gain] = cheats.getValue(gain) + 1
+    }
+
+    return cheats.filter { (k, v) -> k >= 100}.values.sum()
+}
+
+fun part2(map : MutableMap<Position, Char>, start : Position, end : Position) : Int {
+
+    val (distancesToEnd, walls) = bfs(map, end, start) 
+    val totalLength = distancesToEnd[start]!!
+    val cheats = mutableMapOf<Int, Int>().withDefault { 0 }
+
+    for (wall in walls) {
+        var pathsNextToWall = neighbours(wall).filter { map[it]!! == '.'}
+        
+        if (pathsNextToWall.size < 1) continue 
+
+        val comingFrom = pathsNextToWall.maxOf { distancesToEnd[it]!! }
+        val closestToEnd = pathsNextToWall.minOf { distancesToEnd[it]!! }
+        val gain = furthestFromEnd - closestToEnd - 2
+
+        cheats[gain] = cheats.getValue(gain) + 1
+    }
+
+    return cheats.filter { (k, v) -> k >= 100}.values.sum()
+}
+
+/*
+fun part2(map : MutableMap<Position, Char>, start : Position, end : Position) : Int {
+
+    val (distancesToEnd, walls) = bfs(map, end, start) 
+    val totalLength = distancesToEnd[start]!!
+    val cheats = mutableMapOf<Int, HashSet<Pair<Position, Position>>>()
 
     for (wall in walls) {
         var pathsNextToWall = hashSetOf<Position>()
-        val wallsNextToWall = hashSetOf<Position>()
         for (neighbour in neighbours(wall)) {
             if (map[neighbour]!! == '.' ) {
                 pathsNextToWall.add(neighbour)
-            } else if (walls.contains(neighbour)) {
-                wallsNextToWall.add(neighbour)
             }
         }
         
@@ -105,71 +145,12 @@ fun part1(map : MutableMap<Position, Char>, start : Position, end : Position) : 
             val pathLength = totalLength - furthestFromEndVal + closestToEndVal
             val gain = totalLength - pathLength - 2
 
-
-        if (gain > 0) {
-        // println("The wall at $wall has:")
-        // println("\tPaths next to it: $pathsNextToWall")
-        // println("\tWalls next to it: $wallsNextToWall")
-        // println("\t THE WALL HAS A SHORCUT with a total length of $pathLength and gain $gain")
-            cheats[gain] = cheats[gain]?.apply { add(furthestFromEnd to closestToEnd) } ?: hashSetOf(furthestFromEnd to closestToEnd)
-        }
-
-        } else  {
-            for (nextToWall in wallsNextToWall) {
-                val gains = neighbours(nextToWall)
-                    .filter { map[it]!! == '.'}
-                    .map {
-                        val neighbourToEndVal = distancesToEnd[it]!!
-                        
-                        val pathLength = totalLength - furthestFromEndVal + neighbourToEndVal
-                        val gain = totalLength - pathLength - 1
-                        it to gain
-                    }
-                    .filter { it.second > 0}
-                
-                if (gains.size > 0) {
-                    val gain = gains.maxBy { it.second }
-                    println("The wall at $wall has:")
-                    println("\tPaths next to it: $pathsNextToWall")
-                    println("\tWalls next to it: $wallsNextToWall")
-                    println("\t THE WALL HAS A DOUBLE SHORCUT with a total gain of $gain")
-                    //cheats[gain] = cheats.getValue(gain) + 1
-                    cheats[gain.second] = cheats[gain.second]?.apply { add(furthestFromEnd to gain.first) } ?: hashSetOf(furthestFromEnd to gain.first)
-                }
-                // for (neighbour in neighbours(nextToWall)) {
-                //     if (map[neighbour]!! == '.') {
-                //         val neighbourToEnd = distancesToEnd[neighbour]!!
-                        
-                //         val pathLength = totalLength - furthestFromEnd + neighbourToEnd
-                //         val gain = totalLength - pathLength - 1
-
-                //         if (gain > 0) {
-                //             println("The wall at $wall has:")
-                //             println("\tPaths next to it: $pathsNextToWall")
-                //             println("\tWalls next to it: $wallsNextToWall")
-                //             println("\t THE WALL HAS A DOUBLE SHORCUT with a total length of $pathLength and gain $gain")
-                //             cheats[gain] = cheats.getValue(gain) + 1
-                //         }
-                //     }
-                // }
+            if (gain > 0) {
+                cheats[gain] = cheats.getValue(gain) + 1
             }
         }
-
-
-        //   if (pathLength > 0) {
-        //     println("The wall at $wall has:")
-        //     println("\tPaths next to it: $pathsNextToWall")
-        //     println("\tWalls next to it: $wallsNextToWall")
-        //     println("\t THE WALL HAS A SHORCUT with a total length of $pathLength")
-
-        //    }
-        
-
     }
 
-    for ((k, v) in cheats) {
-        println("There ar ${v.size} cheats that save $k picoseconds")
-    }
-
-    return 0
-}
+    println(cheats)
+    return cheats.filter { (k, v) -> k >= 100}.values.sum()
+}*/
