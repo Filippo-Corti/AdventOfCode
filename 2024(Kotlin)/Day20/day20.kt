@@ -1,4 +1,5 @@
 import java.io.File
+import kotlin.math.abs 
 
 typealias Position = Pair<Int, Int>
 
@@ -12,7 +13,7 @@ val dirs = listOf(
 fun neighbours(p : Position) : List<Position> {
     return dirs
         .map { Position(p.first + it.first, p.second + it.second) }
-        .filter { it.first > 0 && it.first < rows - 1 && it.second > 0 && it.second < cols - 1}
+        .filter { it.first >= 0 && it.first < rows && it.second >= 0 && it.second < cols}
 }
 
 var rows : Int = 0
@@ -45,6 +46,7 @@ fun main() {
     cols = lines[0].length
 
     println(part1(map, start, end))
+    println(part2(map, start, end)) 
 }
 
 fun bfs(map : MutableMap<Position, Char>, start : Position, end : Position) : Pair<Map<Position, Int>, HashSet<Position>> {
@@ -82,75 +84,91 @@ fun bfs(map : MutableMap<Position, Char>, start : Position, end : Position) : Pa
 fun part1(map : MutableMap<Position, Char>, start : Position, end : Position) : Int {
 
     val (distancesToEnd, walls) = bfs(map, end, start) 
+    val pathPoints = distancesToEnd.keys
     val totalLength = distancesToEnd[start]!!
     val cheats = mutableMapOf<Int, Int>().withDefault { 0 }
 
-    for (wall in walls) {
-        var pathsNextToWall = neighbours(wall).filter { map[it]!! == '.'}
+    for (path in pathPoints) {
+
+        val pathToEnd = distancesToEnd[path]!!
+
+        val visited = hashSetOf<Position>()
+        val queue = ArrayDeque<Pair<Position, Int>>()
+        queue.add(path to 0)
+
+        while(!queue.isEmpty()) {
+            val (currPos, currDist) = queue.removeFirst()
+            visited.add(currPos)
+
+            if (currDist >= 2) continue
+
+            for (nextPos in neighbours(currPos)) {
+                if (visited.contains(nextPos)) continue
+
+                if (map[nextPos]!! == '#') {
+                    queue.add(nextPos to currDist + 1)
+                } else {
+                    val nextToEnd = distancesToEnd[nextPos]!!
+                    if (pathToEnd < nextToEnd) continue
+                    val gain = pathToEnd - nextToEnd - 1 - currDist
+                    if (gain > 0)
+                        cheats[gain] = cheats.getValue(gain) + 1
+                }
+            }
+
+        }
         
-        if (pathsNextToWall.size < 1) continue 
-
-        val comingFrom = pathsNextToWall.maxOf { distancesToEnd[it]!! }
-        val goingTo = pathsNextToWall.minOf { distancesToEnd[it]!! }
-        val gain = comingFrom - goingTo - 2
-
-        cheats[gain] = cheats.getValue(gain) + 1
     }
 
+    //println(cheats)
     return cheats.filter { (k, v) -> k >= 100}.values.sum()
+}
+
+fun manhattan(p1 : Position, p2 : Position) : Int {
+    return abs(p1.first - p2.first) + abs(p1.second - p2.second)
 }
 
 fun part2(map : MutableMap<Position, Char>, start : Position, end : Position) : Int {
 
     val (distancesToEnd, walls) = bfs(map, end, start) 
+    val pathPoints = distancesToEnd.keys
     val totalLength = distancesToEnd[start]!!
     val cheats = mutableMapOf<Int, Int>().withDefault { 0 }
 
-    for (wall in walls) {
-        var pathsNextToWall = neighbours(wall).filter { map[it]!! == '.'}
-        
-        if (pathsNextToWall.size < 1) continue 
+    for (path in pathPoints) {
 
-        val comingFrom = pathsNextToWall.maxOf { distancesToEnd[it]!! }
-        val closestToEnd = pathsNextToWall.minOf { distancesToEnd[it]!! }
-        val gain = furthestFromEnd - closestToEnd - 2
+        val pathToEnd = distancesToEnd[path]!!
 
-        cheats[gain] = cheats.getValue(gain) + 1
+        val visited = hashSetOf<Position>()
+        val queue = ArrayDeque<Position>()
+        queue.add(path)
+        visited.add(path)
+
+        while(!queue.isEmpty()) {
+            val currPos = queue.removeFirst()
+            val currDist = manhattan(path, currPos)
+
+            if (currDist > 20) continue
+
+            if (map[currPos]!! == '.') {
+                val currToEnd = distancesToEnd[currPos]!!
+                val gain = pathToEnd - currToEnd - currDist
+                if (gain > 0) {
+                    cheats[gain] = cheats.getValue(gain) + 1
+                }
+            }
+
+            for (nextPos in neighbours(currPos)) {
+                if (visited.contains(nextPos)) continue
+                visited.add(nextPos)
+                queue.add(nextPos)
+            }
+
+        }
+     
     }
 
+    //println(cheats)
     return cheats.filter { (k, v) -> k >= 100}.values.sum()
 }
 
-/*
-fun part2(map : MutableMap<Position, Char>, start : Position, end : Position) : Int {
-
-    val (distancesToEnd, walls) = bfs(map, end, start) 
-    val totalLength = distancesToEnd[start]!!
-    val cheats = mutableMapOf<Int, HashSet<Pair<Position, Position>>>()
-
-    for (wall in walls) {
-        var pathsNextToWall = hashSetOf<Position>()
-        for (neighbour in neighbours(wall)) {
-            if (map[neighbour]!! == '.' ) {
-                pathsNextToWall.add(neighbour)
-            }
-        }
-        
-        val furthestFromEnd = pathsNextToWall.maxBy { distancesToEnd[it]!! }
-        val furthestFromEndVal = distancesToEnd[furthestFromEnd]!!
-
-        if (pathsNextToWall.size > 1) {
-            val closestToEnd = pathsNextToWall.minBy { distancesToEnd[it]!! }
-            val closestToEndVal = distancesToEnd[closestToEnd]!!
-            val pathLength = totalLength - furthestFromEndVal + closestToEndVal
-            val gain = totalLength - pathLength - 2
-
-            if (gain > 0) {
-                cheats[gain] = cheats.getValue(gain) + 1
-            }
-        }
-    }
-
-    println(cheats)
-    return cheats.filter { (k, v) -> k >= 100}.values.sum()
-}*/
