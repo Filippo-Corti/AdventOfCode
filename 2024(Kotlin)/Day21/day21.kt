@@ -1,4 +1,5 @@
 import java.io.File
+import kotlin.math.abs
 
 typealias Position = Pair<Int, Int>
 
@@ -16,12 +17,24 @@ val dirChars = mapOf(
     (-1 to 0) to "^"
 )
 
+fun manhattan(p1 : Position, p2 : Position) : Int {
+    return abs(p1.first - p2.first) + abs(p1.second - p2.second)
+}
+
 val longString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 class NumPad(
-    val name : String,
+    val name : String = "NumPad",
     val passResultTo : (String) -> String = { it }
 ) {
+
+    var curr: Char = 'A'
+        set(value) {
+            field = value
+            currPos = states.getValue(value)
+        }
+
+    var currPos: Position = states.getValue(curr)
 
     companion object {
 
@@ -41,43 +54,60 @@ class NumPad(
 
         val positions = states.entries.associate { (key, value) -> value to key }
 
-    }
+        fun allPaths(curr : Char, target : Char) : HashSet<String> {
+            if (curr == target) return hashSetOf<String>("A")
 
-    fun allPaths(start : Char, target : Char) : HashSet<String> {
-        
-    }
+            val currPos = states.getValue(curr)
+            val targetPos = states.getValue(target)
+            val allPathsFromHere = hashSetOf<String>()
 
-    fun moveTo(curr : Char, target : Char, depth : Int = 0) : String {
-        if (target == curr) return passResultTo("A")
-        if (depth > 5) return longString
+            for (dir in dirs) {
+                val nextPos = Position(currPos.first + dir.first, currPos.second + dir.second)
+                
+                if (!positions.containsKey(nextPos)) continue  // Only if I'm still on the pad
+                if (manhattan(nextPos, targetPos) >= manhattan(currPos, targetPos)) continue // Only if I'm getting closer
 
-        val currPos = states.getValue(curr)
-        val targetPos = states.getValue(target)
-        var bestNext = Position(0, 0)
-        var bestStr = longString
-        for (dir in dirs) {
-            val next = Position(currPos.first + dir.first, currPos.second + dir.second)
-            if (!positions.containsKey(next)) continue
-            val str = passResultTo(dirChars[dir]!!)
-            if (str.length < bestStr.length) {
-                bestNext = next
-                bestStr = str
+                val next = positions.getValue(nextPos)
+                val dirString = dirChars[dir]!!
+                val allPathsFromNext = allPaths(next, target)
+                allPathsFromHere.addAll(allPathsFromHere.map { dirString + it })
             }
+
+            return allPathsFromHere
         }
-
-        println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
-
-        curr = positions[bestNext]!!
-        return bestStr + moveTo(positions[bestNext]!!, target, depth + 1)
     }
 
-    fun moveTo(target : String) : String {
-        var str = ""
-        for (c in target) {
-            str += moveTo(c)
-        }
-        return str
-    }
+    // fun moveTo(curr : Char, target : Char, depth : Int = 0) : String {
+    //     if (target == curr) return passResultTo("A")
+    //     if (depth > 5) return longString
+
+    //     val currPos = states.getValue(curr)
+    //     val targetPos = states.getValue(target)
+    //     var bestNext = Position(0, 0)
+    //     var bestStr = longString
+    //     for (dir in dirs) {
+    //         val next = Position(currPos.first + dir.first, currPos.second + dir.second)
+    //         if (!positions.containsKey(next)) continue
+    //         val str = passResultTo(dirChars[dir]!!)
+    //         if (str.length < bestStr.length) {
+    //             bestNext = next
+    //             bestStr = str
+    //         }
+    //     }
+
+    //     println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
+
+    //     curr = positions[bestNext]!!
+    //     return bestStr + moveTo(positions[bestNext]!!, target, depth + 1)
+    // }
+
+    // fun moveTo(target : String) : String {
+    //     var str = ""
+    //     for (c in target) {
+    //         str += moveTo(c)
+    //     }
+    //     return str
+    // }
 
 }
 
@@ -108,37 +138,37 @@ class DirPad(
 
     }
 
-    fun moveTo(target : Char, depth : Int = 0) : String {
-        if (target == curr) return passResultTo("A")
-        if (depth > 5) return longString
+    // fun moveTo(target : Char, depth : Int = 0) : String {
+    //     if (target == curr) return passResultTo("A")
+    //     if (depth > 5) return longString
 
-        val targetPos = states.getValue(target)
-        var bestNext = Position(0, 0)
-        var bestStr = longString
-        for (dir in dirs) {
-            val next = Position(currPos.first + dir.first, currPos.second + dir.second)
-            if (!positions.containsKey(next)) continue
-            val str = passResultTo(dirChars[dir]!!)
-            if (str.length < bestStr.length) {
-                bestNext = next
-                bestStr = str
-            }
-        }
+    //     val targetPos = states.getValue(target)
+    //     var bestNext = Position(0, 0)
+    //     var bestStr = longString
+    //     for (dir in dirs) {
+    //         val next = Position(currPos.first + dir.first, currPos.second + dir.second)
+    //         if (!positions.containsKey(next)) continue
+    //         val str = passResultTo(dirChars[dir]!!)
+    //         if (str.length < bestStr.length) {
+    //             bestNext = next
+    //             bestStr = str
+    //         }
+    //     }
 
-        println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
+    //     println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
 
-        curr = positions[bestNext]!!
-        return bestStr + moveTo(target, depth + 1)
-    }
+    //     curr = positions[bestNext]!!
+    //     return bestStr + moveTo(target, depth + 1)
+    // }
 
 
-    fun moveTo(target : String) : String {
-        var str = ""
-        for (c in target) {
-            str += moveTo(c)
-        }
-        return str
-    }
+    // fun moveTo(target : String) : String {
+    //     var str = ""
+    //     for (c in target) {
+    //         str += moveTo(c)
+    //     }
+    //     return str
+    // }
 
 }
 
@@ -146,30 +176,33 @@ fun main() {
 
     val lines = File("input.txt").readLines()
 
-    println(part1(lines))
+
+    println(NumPad.allPaths('A', '0'))
+
+    //println(part1(lines))
 }
 
-fun part1(sequences : List<String>) : Int {
-    var sum = 0
-    for(seq in sequences) {
-        val dirPad2 = DirPad("DirPad1")
-        val dirPad1 = DirPad(
-            name = "DirPad2",
-            passResultTo = { dirPad2.moveTo(it) }
-        )
-        val numPad = NumPad(
-            name = "NumPad",
-            passResultTo = { dirPad1.moveTo(it) }
-        )
+// fun part1(sequences : List<String>) : Int {
+//     var sum = 0
+//     for(seq in sequences) {
+//         val dirPad2 = DirPad("DirPad1")
+//         val dirPad1 = DirPad(
+//             name = "DirPad2",
+//             passResultTo = { dirPad2.moveTo(it) }
+//         )
+//         val numPad = NumPad(
+//             name = "NumPad",
+//             passResultTo = { dirPad1.moveTo(it) }
+//         )
 
-        val movedTo = numPad.moveTo(seq)
+//         val movedTo = numPad.moveTo(seq)
 
-        println("Sequence: $seq. Found: $movedTo")
+//         println("Sequence: $seq. Found: $movedTo")
 
-        sum += movedTo.length * seq.substring(0, 3).toInt()
-    }
-    return sum
-}
+//         sum += movedTo.length * seq.substring(0, 3).toInt()
+//     }
+//     return sum
+// }
 
 // v<A<AA>>^AvAA<^A>Av<<A>>^AvA^Av<<A>>^AAvA<A>^A<A>Av<A<A>>^AAAvA<^A>A
 // <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
