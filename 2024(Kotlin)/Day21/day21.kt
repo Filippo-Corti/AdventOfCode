@@ -17,36 +17,41 @@ val dirChars = mapOf(
     (-1 to 0) to "^"
 )
 
+val numStates = mapOf<Char, Position>(
+    '0' to Position(3, 1), 
+    '1' to Position(2, 0), 
+    '2' to Position(2, 1), 
+    '3' to Position(2, 2), 
+    '4' to Position(1, 0), 
+    '5' to Position(1, 1), 
+    '6' to Position(1, 2), 
+    '7' to Position(0, 0), 
+    '8' to Position(0, 1), 
+    '9' to Position(0, 2), 
+    'A' to Position(3, 2)
+)
+
+val dirStates = mapOf<Char, Position>(
+    '^' to Position(0, 1), 
+    'A' to Position(0, 2),
+    '<' to Position(1, 0), 
+    'v' to Position(1, 1), 
+    '>' to Position(1, 2)
+)
+
 fun manhattan(p1 : Position, p2 : Position) : Int {
     return abs(p1.first - p2.first) + abs(p1.second - p2.second)
 }
 
-class NumPad(
-    dirPadsCount : Int = 2
+open class Pad (
+    val states : Map<Char, Position>
 ) {
-
-    val states = mapOf<Char, Position>(
-        '0' to Position(3, 1), 
-        '1' to Position(2, 0), 
-        '2' to Position(2, 1), 
-        '3' to Position(2, 2), 
-        '4' to Position(1, 0), 
-        '5' to Position(1, 1), 
-        '6' to Position(1, 2), 
-        '7' to Position(0, 0), 
-        '8' to Position(0, 1), 
-        '9' to Position(0, 2), 
-        'A' to Position(3, 2)
-    ).withDefault { Position(3, 2) }
 
     val positions = states.entries.associate { (key, value) -> value to key }
 
-    val dirPads = DirPad(dirPadsCount)
-
     val pathsMemory = mutableMapOf<Pair<Char, Char>, List<String>>()
-    val complexitiesMemory = mutableMapOf<Pair<Char, Char>, Long>()
-    
-    fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
+
+    open fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
         if (curr == target) return mutableListOf<String>("A")
         
         if(pathsMemory.containsKey(curr to target)) {
@@ -73,6 +78,16 @@ class NumPad(
         return allPathsFromHere.toList()
     }
 
+}
+
+class NumPad (
+    dirPadsCount : Int = 2
+) : Pad(numStates) {
+
+    val dirPads = DirPad(dirPadsCount)
+
+    val complexitiesMemory = mutableMapOf<Pair<Char, Char>, Long>()
+    
     fun calcComplexity(curr : Char, target : Char) : Long {
         if (curr == target) return 1 // "A"
         
@@ -80,7 +95,7 @@ class NumPad(
             return complexitiesMemory[curr to target]!!
         }
 
-        val paths = allBestPathsBetween(curr, target)
+        val paths = super.allBestPathsBetween(curr, target)
         val result = paths.map { dirPads.calcTotalComplexity(it) }.min()
 
         complexitiesMemory[curr to target] = result
@@ -96,47 +111,9 @@ class NumPad(
 
 class DirPad(
     val padsCount : Int = 2
-) {
+) : Pad(dirStates) {
 
-    val states = mapOf<Char, Position>(
-        '^' to Position(0, 1), 
-        'A' to Position(0, 2),
-        '<' to Position(1, 0), 
-        'v' to Position(1, 1), 
-        '>' to Position(1, 2)
-    ).withDefault { Position(0, 2) }
-
-    val positions = states.entries.associate { (key, value) -> value to key }
-
-    val pathsMemory = mutableMapOf<Pair<Char, Char>, List<String>>()
     val complexitiesMemory = mutableMapOf<Triple<Int, Char, Char>, Long>()
-    
-    fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
-        if (curr == target) return mutableListOf<String>("A")
-        
-        if(pathsMemory.containsKey(curr to target)) {
-            return pathsMemory[curr to target]!!
-        }
-
-        val currPos = states.getValue(curr)
-        val targetPos = states.getValue(target)
-        val allPathsFromHere = mutableListOf<String>()
-
-        for (dir in dirs) {
-            val nextPos = Position(currPos.first + dir.first, currPos.second + dir.second)
-
-            if (!positions.containsKey(nextPos)) continue  // Only if I'm still on the pad
-            if (manhattan(nextPos, targetPos) >= manhattan(currPos, targetPos)) continue // Only if I'm getting closer
-
-            val next = positions.getValue(nextPos)
-            val dirString = dirChars[dir]!!
-            val allPathsFromNext = allBestPathsBetween(next, target)
-            allPathsFromHere.addAll(allPathsFromNext.map { dirString + it })
-        }
-
-        pathsMemory[curr to target] = allPathsFromHere
-        return allPathsFromHere.toList()
-    }
 
     fun calcComplexity(curr : Char, target : Char, padNumber : Int = 1) : Long {
         if (curr == target) return 1 // "A"
@@ -147,7 +124,7 @@ class DirPad(
             return complexitiesMemory[key]!!
         }
 
-        val paths = allBestPathsBetween(curr, target)
+        val paths = super.allBestPathsBetween(curr, target)
         var result = 0L
         if (padNumber < padsCount) {
             result = paths.map { calcTotalComplexity(it, padNumber + 1) }.min()
