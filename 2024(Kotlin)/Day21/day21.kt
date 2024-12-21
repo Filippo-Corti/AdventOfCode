@@ -21,7 +21,9 @@ fun manhattan(p1 : Position, p2 : Position) : Int {
     return abs(p1.first - p2.first) + abs(p1.second - p2.second)
 }
 
-object NumPad {
+class NumPad(
+    dirPadsCount : Int = 2
+) {
 
     val states = mapOf<Char, Position>(
         '0' to Position(3, 1), 
@@ -39,14 +41,16 @@ object NumPad {
 
     val positions = states.entries.associate { (key, value) -> value to key }
 
-    
-    val memory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    val dirPads = DirPad(dirPadsCount)
+
+    val pathsMemory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    val complexitiesMemory = mutableMapOf<Pair<Char, Char>, Long>()
     
     fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
         if (curr == target) return mutableListOf<String>("A")
         
-        if(memory.containsKey(curr to target)) {
-            return memory[curr to target]!!
+        if(pathsMemory.containsKey(curr to target)) {
+            return pathsMemory[curr to target]!!
         }
 
         val currPos = states.getValue(curr)
@@ -65,30 +69,34 @@ object NumPad {
             allPathsFromHere.addAll(allPathsFromNext.map { dirString + it })
         }
 
-        memory[curr to target] = allPathsFromHere
+        pathsMemory[curr to target] = allPathsFromHere
         return allPathsFromHere.toList()
     }
 
-    fun allBestPaths(str : String) : List<String> {
-        var i = 0
-        var allPaths = mutableListOf<String>("")
-        while(i < str.length) {
-            val newPaths = allBestPathsBetween(if (i == 0) 'A' else str[i-1], str[i])
-            val allNewPaths = mutableListOf<String>()
-            for(p1 in allPaths) {
-                for (p2 in newPaths) {
-                    allNewPaths.add("$p1$p2")
-                }
-            }
-            allPaths = allNewPaths
-            i++
+    fun calcComplexity(curr : Char, target : Char) : Long {
+        if (curr == target) return 1 // "A"
+        
+        if(complexitiesMemory.containsKey(curr to target)) {
+            return complexitiesMemory[curr to target]!!
         }
-        return allPaths.toList()
+
+        val paths = allBestPathsBetween(curr, target)
+        val result = paths.map { dirPads.calcTotalComplexity(it) }.min()
+
+        complexitiesMemory[curr to target] = result
+        return result
+    }
+
+    fun calcTotalComplexity(str : String) : Long {
+        val withPrefix = "A$str"
+        return withPrefix.zipWithNext { curr, next -> calcComplexity(curr, next)}.sum()
     }
 
 }
 
-object DirPad {
+class DirPad(
+    val padsCount : Int = 2
+) {
 
     val states = mapOf<Char, Position>(
         '^' to Position(0, 1), 
@@ -100,13 +108,14 @@ object DirPad {
 
     val positions = states.entries.associate { (key, value) -> value to key }
 
-    val memory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    val pathsMemory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    val complexitiesMemory = mutableMapOf<Triple<Int, Char, Char>, Long>()
     
     fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
         if (curr == target) return mutableListOf<String>("A")
         
-        if(memory.containsKey(curr to target)) {
-            return memory[curr to target]!!
+        if(pathsMemory.containsKey(curr to target)) {
+            return pathsMemory[curr to target]!!
         }
 
         val currPos = states.getValue(curr)
@@ -125,28 +134,36 @@ object DirPad {
             allPathsFromHere.addAll(allPathsFromNext.map { dirString + it })
         }
 
-        memory[curr to target] = allPathsFromHere
+        pathsMemory[curr to target] = allPathsFromHere
         return allPathsFromHere.toList()
     }
 
-    fun allBestPaths(str : String) : List<String> {
-        var i = 0
-        var allPaths = mutableListOf<String>("")
-        while(i < str.length) {
-            val newPaths = allBestPathsBetween(if (i == 0) 'A' else str[i-1], str[i])
-            val allNewPaths = mutableListOf<String>()
-            for(p1 in allPaths) {
-                for (p2 in newPaths) {
-                    allNewPaths.add("$p1$p2")
-                }
-            }
-            allPaths = allNewPaths
-            i++
+    fun calcComplexity(curr : Char, target : Char, padNumber : Int = 1) : Long {
+        if (curr == target) return 1 // "A"
+        
+        val key = Triple(padNumber, curr, target)
+
+        if(complexitiesMemory.containsKey(key)) {
+            return complexitiesMemory[key]!!
         }
-        return allPaths.toList()
+
+        val paths = allBestPathsBetween(curr, target)
+        var result = 0L
+        if (padNumber < padsCount) {
+            result = paths.map { calcTotalComplexity(it, padNumber + 1) }.min()
+        } else {
+            result = paths.minOf { it.length }.toLong()
+        }
+
+        complexitiesMemory[key] = result
+        return result
+    }
+
+    fun calcTotalComplexity(str : String, padNumber : Int = 1) : Long {
+        val withPrefix = "A$str"
+        return withPrefix.zipWithNext { curr, next -> calcComplexity(curr, next, padNumber)}.sum()
     }
 }
-
 
 fun main() {
 
@@ -156,52 +173,26 @@ fun main() {
     println(part2(lines))
 }
 
-fun part1(sequences : List<String>) : Int {
-    var sum = 0
-
+fun part1(sequences : List<String>) : Long {
+    var sum = 0L
+    val numPad = NumPad(
+        dirPadsCount = 2
+    )
     for(seq in sequences) {
-        var paths = NumPad.allBestPaths(seq)
-        for (i in 0 until 2) {
-            var newPaths = paths.map { DirPad.allBestPaths(it) }.flatMap { it }
-            val minLen = newPaths.minOf { it.length }
-            paths = newPaths.filter { it.length == minLen }
-        }
-
-        val res = paths.minBy { it.length }
-        sum += res.length * seq.substring(0, 3).toInt()
+        val res = numPad.calcTotalComplexity(seq)
+        sum += res * seq.substring(0, 3).toInt()
     }
     return sum
 }
 
-fun part2(sequences : List<String>) : Int {
-    var sum = 0
-
+fun part2(sequences : List<String>) : Long {
+    var sum = 0L
+    val numPad = NumPad(
+        dirPadsCount = 25
+    )
     for(seq in sequences) {
-        var paths = NumPad.allBestPaths(seq)
-        for (i in 0 until 25) {
-            var newPaths = paths.map { DirPad.allBestPaths(it) }.flatMap { it }
-            val minLen = newPaths.minOf { it.length }
-            paths = newPaths.filter { it.length == minLen }
-            println("$i, ${paths.size}")
-        }
-
-        val res = paths.minBy { it.length }
-        sum += res.length * seq.substring(0, 3).toInt()
+        val res = numPad.calcTotalComplexity(seq)
+        sum += res * seq.substring(0, 3).toInt()
     }
     return sum
 }
-
-// v<A<AA>>^AvAA<^A>Av<<A>>^AvA^Av<<A>>^AAvA<A>^A<A>Av<A<A>>^AAAvA<^A>A
-// <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
-
-// v<<A>>^AAAvA^Av<A<AA>>^AvAA<^A>Av<A<A>>^AAAvA<^A>Av<A>^A<A>A
-// <v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A
-
-// v<<A>>^Av<A<A>>^AAvAA<^A>Av<<A>>^AAvA^Av<A>^AA<A>Av<A<A>>^AAAvA<^A>A
-// <v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-
-// v<<A>>^AAv<A<A>>^AAvAA<^A>Av<A>^A<A>Av<A>^A<A>Av<A<A>>^AAvA<^A>A
-// <v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A
-
-// v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA<^A>Av<A>^AA<A>Av<A<A>>^AAAvA<^A>A
-// <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
