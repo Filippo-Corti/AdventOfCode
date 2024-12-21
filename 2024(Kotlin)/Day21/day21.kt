@@ -21,188 +21,175 @@ fun manhattan(p1 : Position, p2 : Position) : Int {
     return abs(p1.first - p2.first) + abs(p1.second - p2.second)
 }
 
-val longString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+object NumPad {
 
-class NumPad(
-    val name : String = "NumPad",
-    val passResultTo : (String) -> String = { it }
-) {
+    val states = mapOf<Char, Position>(
+        '0' to Position(3, 1), 
+        '1' to Position(2, 0), 
+        '2' to Position(2, 1), 
+        '3' to Position(2, 2), 
+        '4' to Position(1, 0), 
+        '5' to Position(1, 1), 
+        '6' to Position(1, 2), 
+        '7' to Position(0, 0), 
+        '8' to Position(0, 1), 
+        '9' to Position(0, 2), 
+        'A' to Position(3, 2)
+    ).withDefault { Position(3, 2) }
 
-    var curr: Char = 'A'
-        set(value) {
-            field = value
-            currPos = states.getValue(value)
+    val positions = states.entries.associate { (key, value) -> value to key }
+
+    
+    val memory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    
+    fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
+        if (curr == target) return mutableListOf<String>("A")
+        
+        if(memory.containsKey(curr to target)) {
+            return memory[curr to target]!!
         }
 
-    var currPos: Position = states.getValue(curr)
+        val currPos = states.getValue(curr)
+        val targetPos = states.getValue(target)
+        val allPathsFromHere = mutableListOf<String>()
 
-    companion object {
+        for (dir in dirs) {
+            val nextPos = Position(currPos.first + dir.first, currPos.second + dir.second)
 
-        val states = mapOf<Char, Position>(
-            '0' to Position(3, 1), 
-            '1' to Position(2, 0), 
-            '2' to Position(2, 1), 
-            '3' to Position(2, 2), 
-            '4' to Position(1, 0), 
-            '5' to Position(1, 1), 
-            '6' to Position(1, 2), 
-            '7' to Position(0, 0), 
-            '8' to Position(0, 1), 
-            '9' to Position(0, 2), 
-            'A' to Position(3, 2)
-        ).withDefault { Position(3, 2) }
+            if (!positions.containsKey(nextPos)) continue  // Only if I'm still on the pad
+            if (manhattan(nextPos, targetPos) >= manhattan(currPos, targetPos)) continue // Only if I'm getting closer
 
-        val positions = states.entries.associate { (key, value) -> value to key }
+            val next = positions.getValue(nextPos)
+            val dirString = dirChars[dir]!!
+            val allPathsFromNext = allBestPathsBetween(next, target)
+            allPathsFromHere.addAll(allPathsFromNext.map { dirString + it })
+        }
 
-        fun allPaths(curr : Char, target : Char) : HashSet<String> {
-            if (curr == target) return hashSetOf<String>("A")
+        memory[curr to target] = allPathsFromHere
+        return allPathsFromHere.toList()
+    }
 
-            val currPos = states.getValue(curr)
-            val targetPos = states.getValue(target)
-            val allPathsFromHere = hashSetOf<String>()
-
-            for (dir in dirs) {
-                val nextPos = Position(currPos.first + dir.first, currPos.second + dir.second)
-                
-                if (!positions.containsKey(nextPos)) continue  // Only if I'm still on the pad
-                if (manhattan(nextPos, targetPos) >= manhattan(currPos, targetPos)) continue // Only if I'm getting closer
-
-                val next = positions.getValue(nextPos)
-                val dirString = dirChars[dir]!!
-                val allPathsFromNext = allPaths(next, target)
-                allPathsFromHere.addAll(allPathsFromHere.map { dirString + it })
+    fun allBestPaths(str : String) : List<String> {
+        var i = 0
+        var allPaths = mutableListOf<String>("")
+        while(i < str.length) {
+            val newPaths = allBestPathsBetween(if (i == 0) 'A' else str[i-1], str[i])
+            val allNewPaths = mutableListOf<String>()
+            for(p1 in allPaths) {
+                for (p2 in newPaths) {
+                    allNewPaths.add("$p1$p2")
+                }
             }
-
-            return allPathsFromHere
+            allPaths = allNewPaths
+            i++
         }
+        return allPaths.toList()
     }
-
-    // fun moveTo(curr : Char, target : Char, depth : Int = 0) : String {
-    //     if (target == curr) return passResultTo("A")
-    //     if (depth > 5) return longString
-
-    //     val currPos = states.getValue(curr)
-    //     val targetPos = states.getValue(target)
-    //     var bestNext = Position(0, 0)
-    //     var bestStr = longString
-    //     for (dir in dirs) {
-    //         val next = Position(currPos.first + dir.first, currPos.second + dir.second)
-    //         if (!positions.containsKey(next)) continue
-    //         val str = passResultTo(dirChars[dir]!!)
-    //         if (str.length < bestStr.length) {
-    //             bestNext = next
-    //             bestStr = str
-    //         }
-    //     }
-
-    //     println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
-
-    //     curr = positions[bestNext]!!
-    //     return bestStr + moveTo(positions[bestNext]!!, target, depth + 1)
-    // }
-
-    // fun moveTo(target : String) : String {
-    //     var str = ""
-    //     for (c in target) {
-    //         str += moveTo(c)
-    //     }
-    //     return str
-    // }
 
 }
 
-class DirPad(
-    val name : String,
-    val passResultTo : (String) -> String = { it }
-) {
+object DirPad {
 
-    var curr: Char = 'A'
-        set(value) {
-            field = value
-            currPos = states.getValue(value)
+    val states = mapOf<Char, Position>(
+        '^' to Position(0, 1), 
+        'A' to Position(0, 2),
+        '<' to Position(1, 0), 
+        'v' to Position(1, 1), 
+        '>' to Position(1, 2)
+    ).withDefault { Position(0, 2) }
+
+    val positions = states.entries.associate { (key, value) -> value to key }
+
+    val memory = mutableMapOf<Pair<Char, Char>, List<String>>()
+    
+    fun allBestPathsBetween(curr : Char, target : Char) : List<String> {
+        if (curr == target) return mutableListOf<String>("A")
+        
+        if(memory.containsKey(curr to target)) {
+            return memory[curr to target]!!
         }
 
-    var currPos: Position = states.getValue(curr)
+        val currPos = states.getValue(curr)
+        val targetPos = states.getValue(target)
+        val allPathsFromHere = mutableListOf<String>()
 
-    companion object {
+        for (dir in dirs) {
+            val nextPos = Position(currPos.first + dir.first, currPos.second + dir.second)
 
-        val states = mapOf<Char, Position>(
-            '^' to Position(0, 1), 
-            'A' to Position(0, 2),
-            '<' to Position(1, 0), 
-            'v' to Position(1, 1), 
-            '>' to Position(1, 2)
-        ).withDefault { Position(0, 2) }
+            if (!positions.containsKey(nextPos)) continue  // Only if I'm still on the pad
+            if (manhattan(nextPos, targetPos) >= manhattan(currPos, targetPos)) continue // Only if I'm getting closer
 
-        val positions = states.entries.associate { (key, value) -> value to key }
+            val next = positions.getValue(nextPos)
+            val dirString = dirChars[dir]!!
+            val allPathsFromNext = allBestPathsBetween(next, target)
+            allPathsFromHere.addAll(allPathsFromNext.map { dirString + it })
+        }
 
+        memory[curr to target] = allPathsFromHere
+        return allPathsFromHere.toList()
     }
 
-    // fun moveTo(target : Char, depth : Int = 0) : String {
-    //     if (target == curr) return passResultTo("A")
-    //     if (depth > 5) return longString
-
-    //     val targetPos = states.getValue(target)
-    //     var bestNext = Position(0, 0)
-    //     var bestStr = longString
-    //     for (dir in dirs) {
-    //         val next = Position(currPos.first + dir.first, currPos.second + dir.second)
-    //         if (!positions.containsKey(next)) continue
-    //         val str = passResultTo(dirChars[dir]!!)
-    //         if (str.length < bestStr.length) {
-    //             bestNext = next
-    //             bestStr = str
-    //         }
-    //     }
-
-    //     println("I am $name and I believe the best way to get from $curr to $target is $bestNext. String is $bestStr")
-
-    //     curr = positions[bestNext]!!
-    //     return bestStr + moveTo(target, depth + 1)
-    // }
-
-
-    // fun moveTo(target : String) : String {
-    //     var str = ""
-    //     for (c in target) {
-    //         str += moveTo(c)
-    //     }
-    //     return str
-    // }
-
+    fun allBestPaths(str : String) : List<String> {
+        var i = 0
+        var allPaths = mutableListOf<String>("")
+        while(i < str.length) {
+            val newPaths = allBestPathsBetween(if (i == 0) 'A' else str[i-1], str[i])
+            val allNewPaths = mutableListOf<String>()
+            for(p1 in allPaths) {
+                for (p2 in newPaths) {
+                    allNewPaths.add("$p1$p2")
+                }
+            }
+            allPaths = allNewPaths
+            i++
+        }
+        return allPaths.toList()
+    }
 }
+
 
 fun main() {
 
     val lines = File("input.txt").readLines()
 
-
-    println(NumPad.allPaths('A', '0'))
-
-    //println(part1(lines))
+    println(part1(lines))
+    println(part2(lines))
 }
 
-// fun part1(sequences : List<String>) : Int {
-//     var sum = 0
-//     for(seq in sequences) {
-//         val dirPad2 = DirPad("DirPad1")
-//         val dirPad1 = DirPad(
-//             name = "DirPad2",
-//             passResultTo = { dirPad2.moveTo(it) }
-//         )
-//         val numPad = NumPad(
-//             name = "NumPad",
-//             passResultTo = { dirPad1.moveTo(it) }
-//         )
+fun part1(sequences : List<String>) : Int {
+    var sum = 0
 
-//         val movedTo = numPad.moveTo(seq)
+    for(seq in sequences) {
+        var paths = NumPad.allBestPaths(seq)
+        for (i in 0 until 2) {
+            var newPaths = paths.map { DirPad.allBestPaths(it) }.flatMap { it }
+            val minLen = newPaths.minOf { it.length }
+            paths = newPaths.filter { it.length == minLen }
+        }
 
-//         println("Sequence: $seq. Found: $movedTo")
+        val res = paths.minBy { it.length }
+        sum += res.length * seq.substring(0, 3).toInt()
+    }
+    return sum
+}
 
-//         sum += movedTo.length * seq.substring(0, 3).toInt()
-//     }
-//     return sum
-// }
+fun part2(sequences : List<String>) : Int {
+    var sum = 0
+
+    for(seq in sequences) {
+        var paths = NumPad.allBestPaths(seq)
+        for (i in 0 until 25) {
+            var newPaths = paths.map { DirPad.allBestPaths(it) }.flatMap { it }
+            val minLen = newPaths.minOf { it.length }
+            paths = newPaths.filter { it.length == minLen }
+            println("$i, ${paths.size}")
+        }
+
+        val res = paths.minBy { it.length }
+        sum += res.length * seq.substring(0, 3).toInt()
+    }
+    return sum
+}
 
 // v<A<AA>>^AvAA<^A>Av<<A>>^AvA^Av<<A>>^AAvA<A>^A<A>Av<A<A>>^AAAvA<^A>A
 // <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
