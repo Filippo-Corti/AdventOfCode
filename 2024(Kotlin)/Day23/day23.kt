@@ -1,8 +1,8 @@
 import java.io.File
 
-fun main() {
+val lan = mutableMapOf<String, HashSet<String>>()
 
-    val lan = mutableMapOf<String, HashSet<String>>()
+fun main() {
 
     File("input.txt").readLines()
         .map { it.split("-") }
@@ -13,28 +13,68 @@ fun main() {
             set2.add(it[0])
         }
 
-    println(part1(lan))
+    println(part1())
+    println(part2())
 }
 
-fun getTriples(lan : Map<String, HashSet<String>>) : HashSet<List<String>> {
-    val triples = hashSetOf<List<String>>()
-    for ((c1, connections) in lan) {
-        for (c2 in connections) {
-            val int = lan[c1]!!.intersect(lan[c2]!!)
-            for (c3 in int) {
-                val c3conns = lan[c3]!!
-                if (c3conns.contains(c1) && c3conns.contains(c2)) {
-                    val triple = listOf(c1, c2, c3).sorted()
-                    triples.add(triple)
-                } 
+// A Clique is a subset of vertices of an undirected graph such that every two distinct vertices in the clique are adjacent.
+// That is, a Clique of a Graph G is an induced subgraph of G that is complete.
+
+// The Bron–Kerbosch algorithm is an enumeration algorithm for finding all maximal cliques in an undirected graph.
+
+fun bronKerbosch(
+    R: MutableSet<String> = mutableSetOf<String>(), // Current Clique
+    P: MutableSet<String>, // Potential Vertices (all Vertices of the considered SubGraph)
+    X: MutableSet<String> = mutableSetOf<String>(), // Excluded Vertices
+) : List<Set<String>> {
+    if (P.isEmpty() && X.isEmpty()) {
+        return listOf(R)
+    }
+    
+    val result = mutableListOf<Set<String>>()
+    val Pcopy = P.toSet()
+    for (v in Pcopy) {
+        val neighbours = lan[v] ?: emptySet()
+        result += bronKerbosch(
+            (R + v).toMutableSet(),
+            P.intersect(neighbours).toMutableSet(),
+            X.intersect(neighbours).toMutableSet(),
+        )
+        P -= v
+        X += v
+    }
+
+    return result
+}
+
+fun <T> Iterable<T>.combinations(length : Int) : Sequence<List<T>> = sequence {
+    val list = this@combinations.toList()
+    if (length == 0) {
+        yield(listOf())
+    } else {
+        for (i in list.indices) {
+            val element = list[i]
+            val remaining = list.subList(i + 1, list.size)
+            for (combination in remaining.combinations(length - 1)) {
+                yield(listOf(element) + combination)
             }
         }
-        val triple = mutableListOf<String>()
-
     }
-    return triples
 }
 
-fun part1(lan : Map<String, HashSet<String>>) : Int {
-    return getTriples(lan).filter { it.find { it[0] == 't' } != null }.size
+fun part1() : Int {
+    return bronKerbosch( P = lan.keys.toMutableSet() )
+        .filter { it.size >= 3 }
+        .flatMap { it.combinations(3) }
+        .filter { it.find { it[0] == 't' } != null }
+        .map { it.sorted() }
+        .toHashSet()
+        .size
+}
+
+fun part2() : String {
+    return bronKerbosch( P = lan.keys.toMutableSet() )
+        .maxBy { it.size }
+        .sorted()
+        .joinToString(",")
 }
