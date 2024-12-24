@@ -6,6 +6,7 @@ val connections : MutableList<Connection> = mutableListOf()
 data class Connection(val gate1 : String, val gate2: String, val gate3 : String, val op : String) {
 
     fun execute() {
+        println("$gate1 $op $gate2 -> $gate3")
         gates[gate3] = when (op) {
             "AND" -> gates[gate1]!! && gates[gate2]!!
             "OR" -> gates[gate1]!! || gates[gate2]!!
@@ -16,10 +17,48 @@ data class Connection(val gate1 : String, val gate2: String, val gate3 : String,
 
 }
 
+fun bitSum(b1 : String, b2 : String, b3 : String? = null) : Pair<String, String> {
+    return when {
+        b1 == "0" && b2 == "0" && b3 == "0"-> "0" to "0"
+        b1 == "0" && b2 == "0" && b3 == "1"-> "0" to "1"
+        b1 == "0" && b2 == "1" && b3 == "0"-> "0" to "1"
+        b1 == "0" && b2 == "1" && b3 == "1"-> "1" to "0"
+        b1 == "1" && b2 == "0" && b3 == "0"-> "0" to "1"
+        b1 == "1" && b2 == "0" && b3 == "1"-> "1" to "0"
+        b1 == "1" && b2 == "1" && b3 == "0"-> "1" to "0"
+        b1 == "1" && b2 == "1" && b3 == "1"-> "1" to "1"
+        else ->  throw IllegalArgumentException("Illegal Arguments $b1 $b2 $b3")
+    }
+}
+
+fun calcBit(gateX : String, gateY : String, gatePrev : String = "") : String {
+    val rightGates = hashSetOf(gateX, gateY, gatePrev)
+    val executed = hashSetOf<Connection>()
+    val usableGates = hashSetOf(gateX, gateY, gatePrev)
+
+    while(true) {
+        val conns = connections.filter { !executed.contains(it) && usableGates.contains(it.gate1) && usableGates.contains(it.gate2) }
+        if (conns.isEmpty()) break
+        conns.forEach { 
+            it.execute()
+            usableGates.add(it.gate3)
+            rightGates.add(it.gate1)
+            rightGates.add(it.gate2)
+            executed.add(it)
+        }
+    }
+
+    println("------")
+
+    val result = usableGates subtract rightGates
+    return result.find { it[0] != 'z' } ?: "z45"
+} 
+
 fun main() {
 
     val (inputs, wires) = File("input.txt").readLines()
         .let { lines -> lines.takeWhile { it.isNotEmpty() } to lines.dropWhile { it.isNotEmpty() }.drop(1) }
+
 
     gates = inputs.map { 
         val x = it.split(": ")
@@ -46,7 +85,7 @@ fun main() {
     }
 
     //println(part1())
-    println(part2())
+    println(part2()) //cqr,ncd,nfj,qnw,vkg,z15,z20,z37
 }
 
 fun part1() : Long {
@@ -61,11 +100,34 @@ fun part1() : Long {
         .joinToString("").toLong(2)
 }
 
-fun part2() {
+fun part2() : String {
+    var res = ""
+    var carryover = "0"
+    var invertedLabels = mutableListOf<String>()
+    for (i in 0 until 45) {
+        val iString = "$i".padStart(2, '0')
+        res = calcBit("x$iString", "y$iString", res)
+        val x = if (gates["x$iString"]!!) "1" else "0"
+        val y = if (gates["y$iString"]!!) "1" else "0"
+        val z = if (gates["z$iString"]!!) "1" else "0"
+        val nextCarryover = if (gates[res]!!) "1" else "0"
 
-    println(connections.sortedBy { it.gate1 }.joinToString("\n"))
+        val expected = bitSum(x, y, carryover)
 
-    connections.forEach { it.execute() }
+        //println("$i: $x + $y = $z con riporto $res = $nextCarryover")
+
+        if (z != expected.second || nextCarryover != expected.first) {
+             println("Errore: found ($nextCarryover, $z) but expected $expected")
+            carryover = expected.first
+            gates[res] = expected.first == "1"
+            gates["z$iString"] = expected.second == "1"
+            invertedLabels.add("z$iString")
+            invertedLabels.add(res)
+        } else {
+            carryover = nextCarryover
+        }
+        // }
+    }
 
     val xBin = gates
         .filter { (k, v) -> k[0] == 'x' }
@@ -94,6 +156,7 @@ fun part2() {
     
     val z = zBin.toLong(2)
 
-    println("x = 0$xBin - $x\ny = 0$yBin - $y\nz = $zBin - $z")
-}
+    //println("x = 0$xBin - $x\ny = 0$yBin - $y\nz = $zBin - $z. Result is correct? ${z == x+y}")
 
+    return invertedLabels.sorted().joinToString(",")
+}
