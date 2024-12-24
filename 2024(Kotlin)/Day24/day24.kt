@@ -44,19 +44,14 @@ fun main() {
         connections.add(conn)
         gatesUsed.add(parts[1])
     }
-    
-    println(gates)
-    println(connections)
 
-    println(part1())
-
+    //println(part1())
+    println(part2())
 }
 
 fun part1() : Long {
 
-    for(conn in connections) {
-        conn.execute()
-    }
+    connections.forEach { it.execute() }
 
     return gates
         .filter { (k, v) -> k[0] == 'z' }
@@ -64,6 +59,41 @@ fun part1() : Long {
         .sortedByDescending { it.first } 
         .map { if (it.second) "1" else "0" }
         .joinToString("").toLong(2)
-
-
 }
+
+fun part2() {
+
+    println(connections.sortedBy { it.gate1 }.joinToString("\n"))
+
+    connections.forEach { it.execute() }
+
+    val xBin = gates
+        .filter { (k, v) -> k[0] == 'x' }
+        .toList()
+        .sortedByDescending { it.first } 
+        .map { if (it.second) "1" else "0" }
+        .joinToString("")
+
+    val x = xBin.toLong(2)
+
+    val yBin = gates
+        .filter { (k, v) -> k[0] == 'y' }
+        .toList()
+        .sortedByDescending { it.first } 
+        .map { if (it.second) "1" else "0" }
+        .joinToString("")
+
+    val y = yBin.toLong(2)
+
+    val zBin = gates
+        .filter { (k, v) -> k[0] == 'z' }
+        .toList()
+        .sortedByDescending { it.first } 
+        .map { if (it.second) "1" else "0" }
+        .joinToString("")
+    
+    val z = zBin.toLong(2)
+
+    println("x = 0$xBin - $x\ny = 0$yBin - $y\nz = $zBin - $z")
+}
+
