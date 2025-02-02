@@ -5,12 +5,12 @@ lines = f.readlines()
 
 registers = {
     'w': 0,
-    'x': 0, # Is always set to z % N at the start
+    'x': 0, 
     'y': 0,
-    'z': 26
+    'z': 0
 }
 
-inputs = 1
+inputs = 15919991912991
 
 def evaluate(operand):
     try:
@@ -27,6 +27,7 @@ def execute(instruction):
             registers[operands[1]] = int(str_inputs[0])
             if len(str_inputs) > 1:
                 inputs = int(str_inputs[1:])
+            print("-------")
         case "add":
             a = evaluate(operands[1])
             b = evaluate(operands[2])
@@ -38,7 +39,7 @@ def execute(instruction):
         case "div":
             a = evaluate(operands[1])
             b = evaluate(operands[2])
-            registers[operands[1]] = a / b
+            registers[operands[1]] = int(a / b)
         case "mod":
             a = evaluate(operands[1])
             b = evaluate(operands[2])
