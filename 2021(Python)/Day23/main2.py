@@ -46,7 +46,6 @@ def move(state, pos, new_pos):
     new_state[new_pos] = val
     return tuple(sorted(new_state.items()))
     
-  
 def next_states(state):
     state_dict = dict(state)
     nexts = []
@@ -84,12 +83,14 @@ print(start)
 queue = [(0, start)]
 distances = defaultdict(lambda: inf, {start: 0})
 visited = defaultdict(lambda: False)
+expansions = 0
 
 while queue:
     _, current = heappop(queue)
+    expansions+=1
     cost = distances[current]
     if is_goal(current):
-        print(cost)
+        print(cost, expansions)
         break
     visited[current] = True
     for (next_state, action_cost) in next_states(current):
