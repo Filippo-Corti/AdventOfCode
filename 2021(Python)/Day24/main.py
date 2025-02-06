@@ -1,55 +1,73 @@
-
+import sys
 
 f = open("input.txt", 'r')
 lines = f.readlines()
 
-registers = {
-    'w': 0,
-    'x': 0, 
-    'y': 0,
-    'z': 0
-}
+blocks = [
+    (1, 10, 5),
+    (1, 13, 9),
+    (1, 12, 4),
+    (26, -12, 4),
+    (1, 11, 10),
+    (26, -13, 14),
+    (26, -9, 14),
+    (26, -12, 12),
+    (1, 14, 14),
+    (26, -9, 14),
+    (1, 15, 5),
+    (1, 11, 10),
+    (26, -16, 8),
+    (26, -2, 15)
+]
 
-inputs = 15919991912991
+def executeOneBlock(w, z, blockIdx):
+    x = z % 26 + blocks[blockIdx][1]
+    z = int(z / blocks[blockIdx][0]) # N1 can be either 1 or 26
+    if (x == w):
+        return z
+    
+    z *= 26
+    z += w + blocks[blockIdx][2]
+    return z
 
-def evaluate(operand):
-    try:
-        return int(operand)
-    except ValueError:
-        return registers[operand]
+def part1(z = 0, i = 0, inputs = ""):
+    if i == len(blocks):
+        if z == 0:
+            print(inputs)
+            sys.exit(1)
+        else:
+            return
+    
+    if blocks[i][0] == 1:
+        for d in range(9, 0, -1):
+            new_z = executeOneBlock(d, z, i)
+            part1(new_z, i+1, inputs + str(d))
+    else:
+        only_d = z % 26 + blocks[i][1]
+        if only_d >= 1 and only_d <= 9:
+            new_z = int(z / 26)
+            part1(new_z, i+1, inputs + str(only_d))
+            
+            
+def part2(z = 0, i = 0, inputs = ""):
+    if i == len(blocks):
+        if z == 0:
+            print(inputs)
+            sys.exit(1)
+        else:
+            return
+    
+    if blocks[i][0] == 1:
+        for d in range(1, 10):
+            new_z = executeOneBlock(d, z, i)
+            part2(new_z, i+1, inputs + str(d))
+    else:
+        only_d = z % 26 + blocks[i][1]
+        if only_d >= 1 and only_d <= 9:
+            new_z = int(z / 26)
+            part2(new_z, i+1, inputs + str(only_d))
 
-def execute(instruction):
-    global inputs
-    operands = instruction.split()
-    match operands[0]:
-        case "inp":
-            str_inputs = str(inputs)
-            registers[operands[1]] = int(str_inputs[0])
-            if len(str_inputs) > 1:
-                inputs = int(str_inputs[1:])
-            print("-------")
-        case "add":
-            a = evaluate(operands[1])
-            b = evaluate(operands[2])
-            registers[operands[1]] = a + b
-        case "mul":
-            a = evaluate(operands[1])
-            b = evaluate(operands[2])
-            registers[operands[1]] = a * b
-        case "div":
-            a = evaluate(operands[1])
-            b = evaluate(operands[2])
-            registers[operands[1]] = int(a / b)
-        case "mod":
-            a = evaluate(operands[1])
-            b = evaluate(operands[2])
-            registers[operands[1]] = a % b
-        case "eql":
-            a = evaluate(operands[1])
-            b = evaluate(operands[2])
-            registers[operands[1]] = 1 if a == b else 0
 
+part1()
+part2()
 
-for line in lines:
-    execute(line)    
-    print(registers)        
