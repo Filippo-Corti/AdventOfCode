@@ -69,5 +69,5 @@ def part2(z = 0, i = 0, inputs = ""):
 
 
 part1()
-part2()
+#part2()
 
