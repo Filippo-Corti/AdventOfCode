@@ -1,28 +1,30 @@
-lines = open('input.txt').read().split("\n")[:-1]
+import sys
+import functools
 
-def part1(banks):
-    s = 0
-    for bank in banks:
-        a = b = '0'
-        i = 0
-        while i < len(bank):
-            if bank[i] > a and i + 1 < len(bank):
-                if b > bank[i]:
-                    a = b
-                    b = bank[i]
-                else:
-                    a = bank[i]
-                    b = bank[i + 1]
-                    i += 1
-            elif bank[i] > b:
-                if b > a:
-                    a = b
-                b = bank[i]
-            i += 1
-        incr = int(a) * 10 + int(b)
-        s += incr
-        print(bank, incr)
-    return s
+data = lambda: (line.strip() for line in open(sys.argv[1]))
 
 
-print(part1(lines))
+def maxjolts(bank, n):
+    """Extracts the largest number of jolts from the given bank, activating exactly n battires"""
+    jolts = list(range(0, n))
+    for i in range(n, len(bank)):
+        to_drop = next(
+            (j 
+             for j, k in zip(jolts, jolts[1:] + [i]) 
+             if bank[k] > bank[j]
+            ), None
+        )
+
+        if to_drop is not None:
+            jolts.remove(to_drop)
+            jolts.append(i)
+
+    return functools.reduce(
+        lambda acc, x: acc * 10 + x, 
+        (int(bank[i]) for i in jolts)
+    )
+
+
+print(sum(maxjolts(bank, n=2) for bank in data()))
+
+print(sum(maxjolts(bank, n=12) for bank in data()))
