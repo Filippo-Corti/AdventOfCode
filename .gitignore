@@ -3,3 +3,4 @@
 *.class
 
 pyproject.toml
+**/__pycache__/**
